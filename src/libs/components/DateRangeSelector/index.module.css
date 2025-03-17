@@ -1,0 +1,10 @@
+.holder {
+  top: 32px;
+  right: 0;
+  position: absolute !important;
+  z-index: 100000 !important;
+  overflow: scroll !important;
+  border: 1px solid #e8ecee;
+  border-radius: 8px;
+  min-width: 700px;
+}

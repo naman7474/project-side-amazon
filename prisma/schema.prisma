@@ -1,0 +1,309 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int                   @id @default(autoincrement())
+  email          String                @unique @db.VarChar(100)
+  phone          String?               @unique @db.VarChar(20)
+  password       String?               @db.VarChar(60)
+  accessToken    String?               @map("access_token") @db.VarChar(40)
+  isShadowed     Boolean               @default(false) @map("is_shadowed")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+  detail         UserDetails?
+  sellerAccounts AmazonSellerAccount[]
+
+  @@map("user")
+}
+
+model UserDetails {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique @map("user_id")
+  name       String?  @db.VarChar(100)
+  imageUrl   String?  @map("image_url") @db.VarChar(255)
+  company    String?  @db.VarChar(100)
+  gst        String?  @db.VarChar(20)
+  isShadowed Boolean  @default(false) @map("is_shadowed")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@map("user_details")
+}
+
+model AmazonSellerAccount {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  name         String?  @db.VarChar(100)
+  sellerId     String?  @map("seller_id") @db.VarChar(100)
+  refreshToken String?  @map("refresh_token") @db.VarChar(500)
+  accessToken  String?  @map("access_token") @db.VarChar(500)
+  isShadowed   Boolean  @default(false) @map("is_shadowed")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@map("amazon_seller_account")
+}
+
+model AmazonSellerMarketplace {
+  id                   Int      @id @default(autoincrement())
+  sellerAccountId      Int      @map("seller_account_id")
+  name                 String?  @db.VarChar(30)
+  marketplaceId        String?  @map("marketplace_id") @db.VarChar(20)
+  countryCode          String?  @map("country_code") @db.VarChar(2)
+  currencyCode         String?  @map("currency_code") @db.VarChar(3)
+  domainName           String?  @map("domain_name") @db.VarChar(50)
+  defaultLanguage      String?  @map("default_language") @db.VarChar(5)
+  isParticipating      Boolean? @default(false) @map("is_participating")
+  hasSuspendedListings Boolean? @default(false) @map("has_suspended_listings")
+  isShadowed           Boolean  @default(false) @map("is_shadowed")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("amazon_seller_marketplace")
+}
+
+model AmazonSales {
+  id                       Int       @id @default(autoincrement())
+  sellerAccountId          Int       @map("seller_account_id")
+  startUnixTimestamp       DateTime? @map("start_unix_timestamp")
+  endUnixTimestamp         DateTime? @map("end_unix_timestamp")
+  unitCount                Int?      @map("unit_count")
+  orderItemCount           Int?      @map("order_item_count")
+  orderCount               Int?      @map("order_count")
+  totalSalesAmount         Decimal?  @map("total_sales_amount")
+  totalSalesCurrency       String?   @map("total_sales_currency") @db.VarChar(10)
+  averageUnitPrice         Decimal?  @map("average_unit_price")
+  averageUnitPriceCurrency String?   @map("average_unit_price_currency") @db.VarChar(10)
+  isShadowed               Boolean   @default(false) @map("is_shadowed")
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@map("amazon_sales")
+}
+
+model AmazonOrders {
+  id                           Int       @id @default(autoincrement())
+  sellerAccountId              Int       @map("seller_account_id")
+  orderId                      String    @map("order_id")
+  earliestShipDate             DateTime? @map("earliest_ship_time")
+  salesChannel                 String?   @map("sales_channel")
+  hasAutomatedShippingSettings Boolean?  @map("has_automated_shipping")
+  status                       String?   @map("order_status")
+  numberOfItemsShipped         Int?      @map("number_of_shipped_items")
+  orderType                    String?   @map("order_type")
+  isPremiumOrder               Boolean?  @map("is_premium")
+  isPrime                      Boolean?  @map("is_prime_order")
+  fulfillmentChannel           String?   @map("fulfillment_channel")
+  numberOfItemsUnshipped       Int?      @map("number_of_unshipped_items")
+  hasRegulatedItems            Boolean?  @map("has_regulated_products")
+  isReplacementOrder           Boolean?  @map("is_replacement")
+  isSoldByAB                   Boolean?  @map("is_sold_by_amazon")
+  latestShipDate               DateTime? @map("latest_ship_time")
+  shipServiceLevel             String?   @map("shipping_service_level")
+  isIspu                       Boolean?  @map("is_ispu_order")
+  marketplaceId                String?   @map("marketplace_id")
+  purchaseDate                 DateTime? @map("purchase_time")
+  isAccessPointOrder           Boolean?  @map("is_access_point_order")
+  isBusinessOrder              Boolean?  @map("is_business_order")
+  orderTotalAmount             Decimal?  @map("order_total")
+  orderTotalCurrencyCode       String?   @map("order_total_currency") @db.VarChar(10)
+  paymentMethodDetails         String?   @map("payment_method_details")
+  isGlobalExpressEnabled       Boolean?  @map("is_global_express_enabled")
+  lastUpdateDate               DateTime? @map("last_update_time")
+  isShadowed                   Boolean   @default(false)
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @default(now()) @updatedAt
+
+	@@unique([sellerAccountId, orderId])
+  @@map("amazon_orders")
+}
+
+model AmazonItem {
+  id              Int       @id @default(autoincrement())
+  sellerAccountId Int
+  marketplaceId   String?
+  sku             String?
+  asin            String?
+  productType     String?
+  conditionType   String?
+  status          String?
+  itemName        String?
+  createdDate     DateTime?
+  lastUpdatedDate DateTime?
+  mainImageLink   String?
+  mainImageHeight Int?
+  mainImageWidth  Int?
+  issues          String?
+  offers          String?
+  fulfillment     String?
+  isShadowed      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("amazon_item")
+}
+
+model AmazonCatalogProduct {
+  id                              Int      @id @default(autoincrement())
+  sellerAccountId                 Int
+  asin                            String
+  marketplaceId                   String?
+  adultProduct                    Boolean?
+  autographed                     Boolean?
+  brand                           String?
+  browseClassificationDisplayName String?
+  browseClassificationId          String?
+  itemClassification              String?
+  itemName                        String?
+  memorabilia                     Boolean?
+  tradeInEligible                 Boolean?
+  websiteDisplayGroup             String?
+  websiteDisplayGroupName         String?
+  attributes                      String?
+  salesRanks                      String?
+  isShadowed                      Boolean  @default(false)
+  createdAt                       DateTime @default(now())
+  updatedAt                       DateTime @updatedAt
+
+  @@map("amazon_catalog_products")
+}
+
+model AmazonFbaInbound {
+  id                      Int      @id @default(autoincrement())
+  sellerAccountId         Int
+  asin                    String
+  marketplaceId           String?
+  program                 String?
+  isEligibleForProgram    Boolean?
+  ineligibilityReasonList String?
+  isShadowed              Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("amazon_fba_inbound")
+}
+
+model AmazonOffer {
+  id              Int      @id @default(autoincrement())
+  sellerAccountId Int
+  sku             String?
+  status          String?
+  itemCondition   String?
+  marketplaceId   String?
+  sellerSku       String?
+  summary         String?
+  offers          String?
+  isShadowed      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("amazon_offers")
+}
+
+model AmazonFbaInventory {
+  id                           Int       @id @default(autoincrement())
+  sellerAccountId              Int
+  asin                         String?
+  fnSku                        String?
+  sellerSku                    String?
+  condition                    String?
+  fulfillableQuantity          Int?
+  inboundWorkingQuantity       Int?
+  inboundShippedQuantity       Int?
+  inboundReceivingQuantity     Int?
+  totalReservedQuantity        Int?
+  pendingCustomerOrderQuantity Int?
+  pendingTransshipmentQuantity Int?
+  fcProcessingQuantity         Int?
+  totalResearchingQuantity     Int?
+  totalUnfulfillableQuantity   Int?
+  customerDamagedQuantity      Int?
+  warehouseDamagedQuantity     Int?
+  distributorDamagedQuantity   Int?
+  carrierDamagedQuantity       Int?
+  defectiveQuantity            Int?
+  expiredQuantity              Int?
+  lastUpdatedTime              DateTime?
+  productName                  String?
+  totalQuantity                Int?
+  isShadowed                   Boolean   @default(false)
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
+
+  @@map("amazon_fba_inventory")
+}
+
+model AmazonProductPricing {
+  id              Int      @id @default(autoincrement())
+  sellerAccountId Int
+  sku             String?
+  marketplaceId   String?
+  offers          String?
+  isShadowed      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("amazon_product_pricing")
+}
+
+model AmazonProductFees {
+  id                     Int      @id @default(autoincrement())
+  sellerAccountId        Int
+  sku                    String?
+  feesEstimate           String?
+  feesEstimateIdentifier String?
+  isShadowed             Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("amazon_product_fees")
+}
+
+model AmazonFinances {
+  id                Int      @id @default(autoincrement())
+  sellerAccountId   Int
+  orderId           String?
+  refundEventList   String?
+  itemFeeList       String?
+  shipmentEventList String?
+  isShadowed        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("amazon_finances")
+}
+
+model AmazonReports {
+	id              Int      @id @default(autoincrement())
+	sellerAccountId Int
+	marketplaceId   String?
+	reportId        String
+	reportType      String
+	status          String?
+	isShadowed      Boolean  @default(false)
+	createdAt       DateTime @default(now())
+	updatedAt       DateTime @updatedAt
+
+	@@map("amazon_reports")
+}
+
+model AmazonReportData {
+	id              Int      @id @default(autoincrement())
+	reportId        Int      @map("report_id")
+	startDate       DateTime
+	endDate         DateTime
+	data						String
+	isShadowed      Boolean  @default(false)
+	createdAt       DateTime @default(now())
+	updatedAt       DateTime @updatedAt
+
+	@@map("amazon_report_data")
+}
